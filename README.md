@@ -12,7 +12,7 @@ Notes on data files:
 3. 'counts.stream.csv' was graciously provided by Heidel, B, Handley, J, and Tuthill, D. (2019). 31-year population trends of Colorado butterfly plant (Oenothera coloradensis; Onagraceae), a short-lived riparian species on F. E. Warren Air Force Base, Laramie County, Wyoming. Prepared for U.S. Fish and Wildlife Service and F. E.  Warren Air Force Base by the Wyoming Natural Diversity Database (University of Wyoming), Laramie, WY.
 
 4. 'disturbances.csv' was graciously provided by Lawrence Walker, also found in
-Walker, LR, and Willig, MR. (1999). An introduction to terrestrial disturbances. pp. 1-16 in L. R. Walker, ed. Ecosystems of Disturbed Ground. Ecosystems of the World 16. Elsevier, The Netherlands.
+Walker, LR, and Willig, MR. (1999). An introduction to terrestrial disturbances. pp. 1-16 in L. R. Walker, ed. Ecosystems of Disturbed Ground. Ecosystems of the World 16. Elsevier, The Netherlands, and
 Walker, LR, and del Moral, R. (2003). Primary succession and ecosystem rehabilitation. Cambridge University Press, Cambridge, UK.
 
 5. 'loehle1988.csv' was data extracted from the appendix in Loehle, C. (1988). Tree life history strategies: the role of defenses. Canadian Journal of Forest Research, 18, 209-222.
