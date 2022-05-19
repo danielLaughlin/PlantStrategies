@@ -1,4 +1,8 @@
 # PlantStrategies
 R code and data for to reproduce examples from 'Plant Strategies' by Daniel Laughlin
 
-To reproduce the analyses throughout the book, load the R scripts. All required packages are listed near the top of the scripts and you will need to install these packages if your machine does not already have them installed.
+Load the R scripts to reproduce the analyses and recreate the figures throughout the book. You will need to install several packages if your machine does not already have them installed.
+
+Above_traits.txt is open trait data from TRY downloaded from Carmona et al. 2021 Nature.
+
+
