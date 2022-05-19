@@ -1,0 +1,568 @@
+---
+title: "Plant Strategies :: Chapter 4 Plant Population Demography"
+author: "Daniel C. Laughlin"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(popbio)
+library(popdemo)
+library(Rage)
+library(Rcompadre)
+library(RColorBrewer)
+library(Ternary)
+library(viridis)
+library(MetBrewer)
+library(dplyr)
+setwd("~/OneDrive - University of Wyoming/Data/Book/github_repo")
+```
+
+# Hypothetical short-lived perennial plant Hierba rápido
+```{r}
+# read in data from Table 4.1
+L <- c(1,0.3,0.1,0.05,0.03,0.01,0.005)
+m <- c(0,0,6,7,6,3,0)
+x <- c(0:6)
+
+# make Euler-Lotka function
+euler <- function(r) sum(L * m * exp(-r * x)) - 1
+
+# solve for r given L, m, and x
+res <- uniroot(f = euler, interval = c(-100, 100), tol = 1e-8, extendInt="yes")
+
+# r
+res$root
+
+# lambda
+exp(res$root) 
+
+```
+
+# Make matrix population model from life table of Hierba rápido
+```{r}
+# create empty matrix
+A <- matrix(0,length(m)-1,length(m)-1)
+
+# fill matrix
+A[1,] <- c(m[2]*L[2]/L[1], m[3]*L[3]/L[2], m[4]*L[4]/L[3],
+           m[5]*L[5]/L[4], m[6]*L[6]/L[5], m[7]*L[7]/L[6])
+A[2,] <- c(L[2]/L[1],0,0,0,0,0)
+A[3,] <- c(0,L[3]/L[2],0,0,0,0)
+A[4,] <- c(0,0,L[4]/L[3],0,0,0)
+A[5,] <- c(0,0,0,L[5]/L[4],0,0)
+A[6,] <- c(0,0,0,0,L[6]/L[5],0)
+
+# compute lambda using eigenanalysis on matrix
+# this value is the same as the Euler-Lotka equation estimate
+eigen(A)$values[1]
+
+matU <- A
+matU[1,] <- c(0,0,0,0,0,0)
+
+matF <- A
+matF[2:6,] <- c(0,0,0,0,0,0)
+
+```
+
+# Calculate life history traits from matrix model of Hierba rápido
+```{r}
+# separate A into component matrices U (growth/survival) and F (fecundity)
+matU <- A
+matU[1,] <- c(0,0,0,0,0,0)
+matF <- A
+matF[2:6,] <- c(0,0,0,0,0,0)
+
+# compute Ro net reproductive rate 
+Ro <- sum(L*m)  # same as Rage::net_repro_rate(matU, matF)
+
+# compute generation time
+GenT <- log(Ro)/log(exp(res$root)) # same as Rage::gen_time(matU, matF)
+
+# compute Keyfitz's entropy
+H <- sum(-log(L)*L)/sum(L) # same as Rage::entropy_k(L)
+
+# compute degree of iteroparity
+entropy_d(L,m)
+
+# compute r from net reproductive rate  and generation time
+r <- log(Ro)/GenT
+
+# compute age at maturity
+mature_age(matU, matF) 
+
+# compute mean life expectancy
+life_expect_mean(matU)
+
+# compute mature life expectancy
+longevity(matU) 
+```
+
+# Project population of Hierba rápido
+```{r}
+# set initial population sizes of each age class
+Nx <- c(2,2,2,2,2,2)
+12*exp(res$root)^10
+project(A, vector=Nx, time=10)
+projection1 <- project(A, vector=Nx, time=10, return.vec=TRUE)
+projection1@vec
+cols <- brewer.pal(6, name="Dark2")
+
+par(mar=c(4,4,1,1))
+matplot(x=c(0:10), projection1@vec, type="l", col=cols, lwd=3, ylim=c(0,25),
+        xlab="Years (t)", ylab="Population size (N)",lty=c(1:6))
+legend("top",legend=c("1","2","3","4","5","6"), horiz=TRUE,bty="n",
+       lty=c(1:6), lwd=2, cex=0.7, col=cols, title="Age")
+```
+
+# Download compadre database of matrix population models
+```{r}
+### Download COMPADRE Rfile from https://compadre-db.org/
+### see for more info: https://jonesor.github.io/Rcompadre/articles/GettingStarted.html
+load("COMPADRE_v.6.21.8.0.RData")
+Compadre <- as_cdb(compadre)
+```
+
+# Load Echinacea angustifolia matrix (#37 from Hurlburt's thesis, included in compadre)
+```{r}
+cdb_check_species(Compadre, "Echinacea angustifolia")
+echang <- cdb_check_species(Compadre, "Echinacea angustifolia", return_db = TRUE)
+
+# define A, U, and F submatrices
+matA <- matA(echang)[[37]]
+matU <- matU(echang)[[37]]
+matF <- matF(echang)[[37]]
+
+# name stages
+classInfo <- matrixClass(echang)[[37]]
+matA <- name_stages(matA, c("Seedling","Small","Medium","Large","Dormant"))
+matU <- name_stages(matU, c("Seedling","Small","Medium","Large","Dormant"))
+matF <- name_stages(matF, c("Seedling","Small","Medium","Large","Dormant"))
+
+# make life table from matrix model
+lifeT <- mpm_to_table(matU, matF)
+
+# compute Keyfitz's entropy
+entropy_k(lifeT$lx)
+
+# compute degree of iteroparity
+entropy_d(lifeT$lx,lifeT$mx) 
+
+## Figure 4.4
+nt <- c(220, 1245, 330, 155, 195)
+projection <- project(matA, nt, time=50, return.vec=TRUE)
+projection@vec
+cols <- brewer.pal(5, name="Set1")
+
+par(mar=c(4,4,1,1))
+matplot(x=c(0:50), projection@vec, type="l", col=cols, lwd=3,
+        xlab="", ylab="",lty=c(1:5), bty="n")
+title(xlab="Years (t)", ylab="", line=2.5)
+title(ylab="Population size (N)")
+legend("topleft",legend=c("Seedling","Small","Medium","Large","Dormant"),
+       lty=c(1:5), lwd=3, col=cols, cex=0.5, bty="n")
+```
+
+# Compute stable age distribution and reproductive value
+```{r}
+# use right eigenvalue to compute stable stage distribution manually
+stable <- eigen(matA)$vectors[,1]/sum(eigen(matA)$vectors[,1])
+
+# use stable.stage() function to do the same
+stable.stage(matA)
+
+# use left eigenvalue to compute reproductive value manually
+eL <- (eigen(t(matA))$vectors[,1]/sum(eigen(t(matA))$vectors[,1]))
+repro <- Re(eL/eL[1])
+
+# use reproductive.value() function to do the same
+reproductive.value(matA)
+
+### compute life history traits
+# net reproductive rate
+net_repro_rate(matU, matF)
+
+# generation time
+gen_time(matU, matF)
+
+# age at maturity
+mature_age(matU, matF)
+
+# longevity
+longevity(matU) # mature life expectancy
+```
+
+# Sensitivity analysis
+```{r}
+# compute sensitivities manually
+num <- (reproductive.value(matA)%*%t(stable.stage(matA))) 
+den <- as.numeric(reproductive.value(matA)%*%stable.stage(matA))
+sens <- (1/den)*num # solve by hand
+
+# use sensitivity() function
+sens <- sensitivity(matA)
+image2(sens, mar=c(1,6,6,1), box.offset=.3, col=grey.colors(10))
+```
+
+# Elasticity analysis
+```{r}
+# compute elasticities manually
+elas <- (matA/lambda(matA))*sens 
+
+# use elasticity() function
+elas <- elasticity(matA)
+
+### Elasticities
+image2(elas, mar=c(1,6,6,1), box.offset=.3, col=viridis_pal(1, begin=0.4, end=1)(10))
+
+```
+
+### Demographic triangles
+```{r}
+par(mfrow=c(1,2),mar=c(1,1,1,1))
+TernaryPlot(lab.offset=0.15,alab="Importance of Growth (G) %",
+            blab="Importance of Survival (L) %", clab="Importance of Reproduction (F) %",
+            grid.lines = 2, lab.cex=0.9, axis.cex=0.8,
+            grid.minor.lines = 0, main="(a)")
+TernaryText(c(0.25, 0.15, 0.45), labels=c("Short-lived
+herbs"), cex=0.8, font=2)
+TernaryText(c(0.70, 0.15, 0.15), labels=c("Herbs of
+open habitats"), cex=0.8, font=2)
+TernaryText(c(0.25, 0.45, 0.15), labels=c("Forest
+herbs"), cex=0.8, font=2)
+TernaryText(c(0.40, 0.30, 0.20), labels=c("Shrubs"), cex=0.8, font=2)
+TernaryText(c(0.1, 0.70, 0.15), labels=c("Trees"), cex=0.8, font=2)
+
+### Demographic triangle calculations for Echinacea
+stasis <- 0 + 0.114 + 0.003 + 0 + 0.161 + 0.009 + 0.459 + 0.002 + 0.005 + 0.007 + 0.017 + 0
+fecundity <- sum(elas[1,2:5])
+growth <- 0.044 + 0.008 + 0 + 0.046 + 0.014 + 0 + 0.003 + 0.052 + 0.01
+sum(stasis, fecundity, growth)
+
+TernaryPlot(lab.offset=0.15,alab="Importance of Growth (G) %",
+            blab="Importance of Survival (L) %", clab="Importance of Reproduction (F) %",
+            grid.lines = 2, lab.cex=0.9, axis.cex=0.8,
+            grid.minor.lines = 0, main="(b)")
+TernaryText(c(0.15, 0.60, 0.15), labels=c("Echinacea
+angustifolia"), cex=0.8, font=3)
+TernaryText(c(0.40, 0.35, 0.15), labels=c("Mimulus
+cardinalis"), cex=0.8, font=3)
+TernaryText(c(0.15, 0.15, 0.7), labels=c("Solidago
+mollis"), cex=0.8, font=3)
+```
+
+# Extract mean matrix for Mimulus cardinalis in compadre
+```{r}
+mimcar <- cdb_check_species(Compadre, "Mimulus cardinalis", return_db = TRUE)
+matA <- mean(matA(mimcar))
+matU <- mean(matU(mimcar))
+matF <- mean(matF(mimcar))
+classInfo <- matrixClass(mimcar)[[1]]
+matA <- name_stages(matA, c("Seed","Small","Large","Reproductive"))
+matU <- name_stages(matU, c("Seed","Small","Large","Reproductive"))
+matF <- name_stages(matF, c("Seed","Small","Large","Reproductive"))
+lifeT <- mpm_to_table(matU, matF)
+entropy_k(lifeT$lx)
+entropy_d(lifeT$lx,lifeT$mx) # degree of iteroparity
+mature_age(matU, matF) # age at maturity
+life_expect_mean(matU) #mean life expectancy
+longevity(matU) # mature life expectancy
+net_repro_rate(matU, matF)
+gen_time(matU, matF)
+elas <- elasticity(matA)
+vr_fecundity(matU, matF)
+vr_shrinkage(matU)
+vr_growth(matU)
+```
+
+# Extract mean matrix for Solidago mollis in compadre 
+```{r}
+solmol <- cdb_check_species(Compadre, "Solidago mollis", return_db = TRUE)
+matA <- mean(matA(solmol))
+matU <- mean(matU(solmol))
+matF <- mean(matF(solmol))
+classInfo <- matrixClass(solmol)[[1]]
+matA <- name_stages(matA, c("1 yr",">= 2 yr"))
+matU <- name_stages(matU, c("1 yr",">= 2 yr"))
+matF <- name_stages(matF, c("1 yr",">= 2 yr"))
+mature_age(matU, matF) # age at maturity
+lifeT <- mpm_to_table(matU, matF)
+entropy_k(lifeT$lx)
+entropy_d(lifeT$lx,lifeT$mx) # degree of iteroparity
+life_expect_mean(matU) #mean life expectancy
+longevity(matU) # mature life expectancy
+net_repro_rate(matU, matF)
+gen_time(matU, matF)
+net_repro_rate(matU, matF)
+gen_time(matU, matF)
+mature_age(matU, matF) # age at maturity
+life_expect_mean(matU) #mean life expectancy
+longevity(matU) # mature life expectancy
+vr_fecundity(matU, matF)
+vr_shrinkage(matU)
+vr_growth(matU)
+
+```
+
+# Extract mean matrix for Silene acaulis in compadre
+```{r}
+silaca <- cdb_check_species(Compadre, "Silene acaulis", return_db = TRUE)
+matA <- mean(matA(silaca))
+matU <- mean(matU(silaca))
+matF <- mean(matF(silaca))
+classInfo <- matrixClass(silaca)[[1]]
+matA <- name_stages(matA, classInfo$MatrixClassAuthor)
+matU <- name_stages(matU, classInfo$MatrixClassAuthor)
+matF <- name_stages(matF, classInfo$MatrixClassAuthor)
+lifeT <- mpm_to_table(matU, matF)
+entropy_k(lifeT$lx)
+entropy_d(lifeT$lx,lifeT$mx)
+net_repro_rate(matU, matF)
+gen_time(matU, matF)
+matU <- name_stages(matU, classInfo$MatrixClassAuthor)
+matF <- name_stages(matF, classInfo$MatrixClassAuthor)
+mature_age(matU, matF)
+life_expect_mean(matU)
+longevity(matU)
+vr_fecundity(matU, matF)
+vr_shrinkage(matU)
+vr_growth(matU)
+```
+
+# Extract mean matrix for Asclepias meadii in compadre
+```{r}
+ascmea <- cdb_check_species(Compadre, "Asclepias meadii", return_db = TRUE)
+matA <- mean(matA(ascmea))
+matU <- mean(matU(ascmea))
+matF <- mean(matF(ascmea))
+classInfo <- matrixClass(ascmea)[[1]]
+matA <- name_stages(matA, classInfo$MatrixClassAuthor)
+matU <- name_stages(matU, classInfo$MatrixClassAuthor)
+matF <- name_stages(matF, classInfo$MatrixClassAuthor)
+lifeT <- mpm_to_table(matU, matF)
+entropy_k(lifeT$lx)
+entropy_d(lifeT$lx,lifeT$mx) # degree of iteroparity
+net_repro_rate(matU, matF)
+gen_time(matU, matF)
+matU <- name_stages(matU, classInfo$MatrixClassAuthor)
+matF <- name_stages(matF, classInfo$MatrixClassAuthor)
+matA <- matU + matF
+mature_age(matU, matF) # age at maturity
+life_expect_mean(matU) #mean life expectancy
+longevity(matU) # mature life expectancy
+vr_fecundity(matU, matF)
+vr_shrinkage(matU)
+vr_growth(matU)
+```
+
+# Density dependence
+```{r}
+wm <- 40
+N <- c(1:50)
+a <- 1
+w <- wm * (1 + a*N)^-1
+
+par(mar=c(4,4,1,1))
+plot(N,w, type="l",lwd=2,
+     ylab="w = Mean weight per plant (g)", xlab="N = Plants per square meter")
+```
+
+
+# Build an Integral Projection Model based on scripts from Ellner et al. 2016, thanks to Dave Atkins for assistance with this code and data preparation
+```{r}
+# load data
+dat <- read.csv("twoSpp.csv", header=TRUE)
+
+# convert area to log area
+dat$area_t <- log(dat$area_t)
+dat$area_tplus1 <- log(dat$area_tplus1)
+
+# subset data to analyse one species
+spDF <- dat %>% filter(species=="Festuca arizonica")
+
+# ignore individuals with area < 0.05 cm^2 generated from converting points to polygons
+spDF$area_t[spDF$area_t < (log(0.05))] <- NA
+spDF$area_tplus1[spDF$area_tplus1 < (log(0.05))] <- NA
+
+## set up vector of parameters
+params=data.frame(
+  surv.int=NA,
+  surv.slope=NA,
+  #####
+  growth.int=NA,
+  growth.slope=NA,
+  growth.sd=NA,
+  #####
+  flwr.int=NA,
+  flwr.slope=NA,
+  #####
+  seed.int=NA,
+  seed.slope=NA,
+  #####
+  recruit.size.mean=NA,
+  recruit.size.sd=NA,
+  #####
+  establishment.prob=NA
+)
+```
+
+# Fit vital rate regression models
+```{r}
+# 1. survival regression using logistic regression
+surv.reg = glm(survives_tplus1 ~ area_t, data=spDF, family=binomial)
+params$surv.int = coefficients(surv.reg)[1]
+params$surv.slope = coefficients(surv.reg)[2]
+summary(surv.reg)
+
+# 2. growth regression using linear model
+growth.reg=lm(area_tplus1 ~ area_t, data=spDF)
+params$growth.int=coefficients(growth.reg)[1]
+params$growth.slope=coefficients(growth.reg)[2]
+params$growth.sd=sd(resid(growth.reg))
+summary(growth.reg)
+
+## 3. flowering probability using logistic regression
+flower.reg = glm(flwr.sim ~ area_t, data=spDF, family=binomial)
+params$flwr.int = coefficients(flower.reg)[1]
+params$flwr.slope = coefficients(flower.reg)[2]
+summary(flower.reg)
+
+# 4. seeds regression using poisson regression
+# note that the seeds in this example were simulated from an empirical relationship
+seed.reg = glm(seed.sim ~ area_t, data = spDF, family = "poisson")
+params$seed.int=coefficients(seed.reg)[1]
+params$seed.slope=coefficients(seed.reg)[2]
+summary(seed.reg)
+
+# 5. size distribution of recruits using Gaussian distribution
+params$recruit.size.mean = mean(spDF$area_t[spDF$recruit==1], na.rm =TRUE)
+params$recruit.size.sd = sd(spDF$area_t[spDF$recruit==1], na.rm =TRUE)
+
+## 6. establishment probability
+params$establishment.prob = sum(spDF$recruit, na.rm = TRUE) / sum(spDF$seed.sim[spDF$flwr.sim==1], na.rm=TRUE)
+```
+
+# Plot vital rate regression models
+```{r}
+par(mfrow=c(2,2), mar=c(4,4,2,1))
+cols <- met.brewer("Degas",7)
+xx=seq(-4,8,length.out=1000) # sizes at which to evaluate predictions
+plot(spDF$area_t, jitter(spDF$survives_tplus1, 0.2), xlab="log Size (t)",ylab="Survival to t+1", col=cols[4], pch=19)
+lines(xx,predict(surv.reg, data.frame(area_t=xx), type="response"), col=cols[3],lwd=4)
+title("(a)", adj = 0, line = 1)
+
+plot(spDF$area_t, spDF$area_tplus1, xlab="log Size (t)", ylab="log Size (t+1)", col=cols[4], pch=19)
+lines(xx,predict(growth.reg, data.frame(area_t=xx)), col=cols[3],lwd=4)
+title("(b)", adj = 0, line = 1)
+abline(0,1, lty=2)
+
+plot(spDF$area_t, jitter(spDF$flwr.sim, 0.2), xlab="log Size (t)",ylab="Flowers (t)", col=cols[4], pch=19)
+lines(xx,predict(flower.reg, data.frame(area_t=xx), type="response"),col=cols[3],lwd=4)
+title("(c)", adj = 0, line = 1)
+
+plot(spDF$area_t[spDF$flwr.sim==1], spDF$seed.sim[spDF$flwr.sim==1], xlab="log Size (t)", ylab="Seed Number (t)",
+     col=cols[4], pch=19)
+lines(xx,predict(seed.reg,data.frame(area_t=xx),type="response"),col=cols[3],lwd=4)
+title("(d)", adj = 0, line = 1)
+```
+
+# Create IPM functions
+```{r}
+## Growth function using linear model
+g_z1z <- function(area_tplus1, area_t, params)
+{
+  mu <- params$growth.int + params$growth.slope * area_t    # mean size next year
+  sig <- params$growth.sd                                   # sd about mean
+  p.den.grow <- dnorm(area_tplus1, mean = mu, sd = sig)   # pdf that you are size area_tplus1 given you were size z
+  return(p.den.grow)
+}
+
+## Survival function using logistic regression
+s_z <- function(area_t, params)
+{
+  linear.p <- params$surv.int + params$surv.slope * area_t # linear predictor
+  p <- 1/(1+exp(-linear.p))                            # logistic transformation to probability
+  return(p)
+}
+
+## Probability of flowering function using logistic regression
+p_bz <- function(area_t, params)
+{
+  linear.p <- params$flwr.int + params$flwr.slope * area_t      # linear predictor
+  p <- 1/(1+exp(-linear.p))                                # logistic transformation to probability
+  return(p)
+}
+
+## Seed production function using poisson regression
+b_z <- function(area_t, params)
+{
+  N <- exp(params$seed.int + params$seed.slope * area_t)    # seed production of a size z plant
+  return(N)
+}
+
+## Recruit size pdf using Gaussian distribution
+c_0z1 <- function(area_t, params)
+{
+  mu <- params$recruit.size.mean
+  sig <- params$recruit.size.sd
+  p.deRecr <- dnorm(area_t, mean = mu, sd = sig)        # pdf of a size z1 recruit
+  return(p.deRecr)
+}
+```
+
+# Define kernels
+```{r}
+## Define the survival kernel
+P_z1z <- function (area_tplus1, area_t, params) {
+  return( s_z(area_t, params) * g_z1z(area_tplus1, area_t, params) )
+}
+
+## Define the reproduction kernel
+F_z1z <- function (area_tplus1, area_t, params) {
+  return( p_bz(area_t, params) * b_z(area_t, params) * params$establishment.prob * c_0z1(area_tplus1, params))
+}
+
+## Build the discretized kernel
+mk_K <- function(m, params, L, U) {
+  # mesh points 
+  h <- (U - L)/m
+  meshpts <- L + ((1:m) - 1/2) * h
+  P <- h * (outer(meshpts, meshpts, P_z1z, params = params))
+  F <- h * (outer(meshpts, meshpts, F_z1z, params = params))
+  K <- P + F
+  ## compute the eigen vectors / values 
+  IPM.eig.sys <- eigen(K)
+  ## lambda
+  lambda <- Re(IPM.eig.sys$values[1])
+  return(list(lambda=lambda, K = K, meshpts = meshpts, P = P, F = F))
+}
+
+```
+
+# Fit kernel and examine lambda
+```{r}
+## set upper and lower integration limits to avoid evictions
+lim1 <- 0.9*min(spDF$area_t, na.rm=TRUE)
+lim2 <- 1.1*max(spDF$area_t, na.rm=TRUE)
+
+out <- mk_K(m=100, params=params, L=lim1, U=lim2)
+out$lambda
+
+```
+
+# Plot the kernel
+```{r}
+par(mfrow=c(1,2), mar=c(4,4,2,1))
+
+# model with 500 very small size classes
+out <- mk_K(m=500, params=params, L=lim1, U=lim2)
+image(out$meshpts, out$meshpts, t(out$K)^0.01, col = viridis_pal()(12), ylim=c(lim1,lim2),xlim=c(lim1,lim2),
+      xlab="log Size (t)", ylab="log Size (t+1)", main="(a)")
+
+# compare to a model with only 4 size classes more similar to matrix model
+out <- mk_K(m=4, params=params, L=lim1, U=lim2)
+image(out$meshpts, out$meshpts, t(out$K)^0.05, col = viridis_pal()(12), ylim=c(lim1,lim2),xlim=c(lim1,lim2),
+      xlab="log Size (t)", ylab="log Size (t+1)", main="(b)")
+```
+

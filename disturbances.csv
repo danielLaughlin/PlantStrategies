@@ -1,0 +1,28 @@
+Element,Disturbance Type,Code,Return Interval (yr),Maximum extent (m2),Extent,Frequency,Severity,Intensity,Stability,Texture,Fertility,Freq.Jitter,Severity.Jitter
+Earth,Volcano,Vo,"1-100,000","100,000,000",1,1,5,,,,,1,5
+Earth,A'a,aa,"1-100,000","100,000,000",4,1,5,5,4,2,1,1,5.2
+Earth,Pahoehoe,pa,"1-100,000","100,000,000",4,1,5,5,5,1,1,1,4.8
+Earth,Tephra,te,"1-100,000","10,000,000,000",5,1,4,4,2,3,3,1,4
+Earth,Lahar,la,"1-100,000","100,000,000",4,1,5,5,3,4,4,1,5
+Earth,Erosion,Er,,,3,4,3,,,,,4,2.8
+Earth,Earthquake,Ea,"1-100,000","10,000,000",1,1,4,,,,,1,4.2
+Earth,Landslide,La,"1-10,000","10,000",1,2,3,3,1,3,3,2,3
+Earth,Uprooting,Up,"1-1,000",10,0,3,2,1,2,1,4,3,2
+Earth,Rock outcrops,Roc,"1-100,000","100,000",1,1,5,3,5,1,1,1.2,4.6
+Air,Dune,Du,"1-10,000","10,000,000",3,2,3,3,2,3,2,2,3.2
+Air,Hurricane,Hu,,,1,1,2,,,,,1,2
+Air,Tornado,To,,,1,1,4,,,,,1,3.8
+Air,Tree-fall,Tr,,,2,5,1,,,,,5,1
+Water,Drought,Dr,,,4,3,2,,,,,3,2.3
+Water,Flood,Fl,"10-1,000","100,000,000",3,2,2,2,3,4,5,2,2
+Water,Glacier,Gl,"10,000-100,000","10,000,000",1,1,5,4,3,4,3,1,5.4
+Fire,Fire,Fi,,,2,4,3,,,,,4,3.2
+Non-human,Herbivory,He,,,4,5,1,,,,,5,1.2
+Non-human,Invasion,In,,,4,4,3,,,,,4,3
+Non-human,Animal activity,An,,,0,3,1,,,,,3,1
+Human,Agriculture,Ag,,,4,4,3,,,,,4,3.2
+Human,Forestry,Fo,,,5,4,2,,,,,4,2
+Human,Mineral extraction,Min,1-10yr,"1,000,000",1,2,5,5,4,3,2,2,5
+Human,Military activity,Mil,,,2,2,4,,,,,2,4
+Human,Roads,Roa,1-10yr,"1,000,000",4,2,5,5,5,3,2,2,5
+Human,Urban,Ur,1-100,"1,000,000",4,4,5,5,5,4,2,4,5
