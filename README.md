@@ -13,4 +13,6 @@ Load the R scripts to reproduce the analyses and recreate the figures throughout
 Walker, LR, and Willig, MR. (1999). An introduction to terrestrial disturbances. pp. 1-16 in L. R. Walker, ed. Ecosystems of Disturbed Ground. Ecosystems of the World 16. Elsevier, The Netherlands.
 Walker, LR, and del Moral, R. (2003). Primary succession and ecosystem rehabilitation. Cambridge University Press, Cambridge, UK.
 
+'loehle1988.csv' was data extracted from the appendix in Loehle, C. (1988). Tree life history strategies: the role of defenses. Canadian Journal of Forest Research, 18, 209-222.
+
 
