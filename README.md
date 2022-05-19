@@ -19,4 +19,4 @@ Walker, LR, and del Moral, R. (2003). Primary succession and ecosystem rehabilit
 
 6. 'nzDrought.NewPhyt.data.csv' is open data extracted from Laughlin, DC, Delzon, S, Clearwater, MJ, Bellingham, PJ, McGlone, MS, and Richardson, SJ. (2020). Climatic limits of temperate rainforest tree species are explained by xylem embolism resistance among angiosperms but not among conifers. New Phytologist, 226, 727-740.
 
-7.
+7. 'twoSpp.csv' is data for Festuca arizonica and Muhlenbergia montana processed from the following data paper: Moore, MM, Jenness, JS, Laughlin, DC, et al. (2022). Cover and density of southwestern ponderosa pine understory plants in permanent chart quadrats (2002–2020). Ecology,e3661.
