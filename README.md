@@ -1,7 +1,7 @@
 # PlantStrategies
-R code and data for to reproduce examples from 'Plant Strategies: The Demographic Consequences of Functional Traits in Changing Environments' by Daniel C. Laughlin, to be published by Oxford University Press.
+R code and data for to reproduce examples from 'Plant Strategies: The Demographic Consequences of Functional Traits in Changing Environments' by Daniel C. Laughlin, published by Oxford University Press in 2023.
 
-Load the R scripts to reproduce the analyses and recreate the figures throughout the book. You will need to install several packages if your machine does not already have them installed.
+Load the R scripts to reproduce the analyses and recreate the figures throughout the book. You will need to install several packages if your machine does not already have them installed (they are listed at the top of each script).
 
 Notes on data files:
 
